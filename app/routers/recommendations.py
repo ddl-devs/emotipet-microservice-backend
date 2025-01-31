@@ -7,11 +7,12 @@ router = APIRouter()
 @router.post("/recommendations/imc")
 async def get_imcc_recommendations(
     weight: float = Query(..., description="Weight of the dog in kg"),
+    breed: str = Query(..., description="Breed of the dog"),
     height: float = Query(..., description="Height of the dog in cm"),
 ):
     prompt = (
-        f"Calcule o IMCC (Índice de Massa Corporal Canino) para um cachorro com "
-        f"peso de {weight} kg e altura de {height} cm. Retorne apenas o valor do IMCC e sua classificação.\n\n"
+        f"Calcule o IMCC (Índice de Massa Corporal Canino) para um cachorro da raça {breed}"
+        f" com peso de {weight} kg e altura de {height} cm. Retorne apenas o valor do IMCC e sua classificação.\n\n"
         "A fórmula para o cálculo é:\n"
         "IMCC = peso / (altura × altura)\n\n"
         "Classificação:\n"
