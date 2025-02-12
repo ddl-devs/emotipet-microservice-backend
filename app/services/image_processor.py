@@ -1,42 +1,58 @@
-import tensorflow as tf
-from app.config import settings
+from pathlib import Path
+import logging
+from PIL import Image
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.applications.mobilenet import preprocess_input
+
+# Configuração do logger
+logging.basicConfig(level=logging.INFO)
 
 
 def custom_depthwise_conv2d(*args, **kwargs):
-    kwargs.pop('groups', None)  
+    kwargs.pop("groups", None)
     return tf.keras.layers.DepthwiseConv2D(*args, **kwargs)
 
 
-def prepare_image(img_path: str):
-    img = tf.keras.utils.load_img(img_path, target_size=(224, 224))  
-    img_array = tf.keras.utils.img_to_array(img)  
-    img_array = np.expand_dims(img_array, axis=0) 
-    img_array /= 255.0
-
-    return img_array
+class FixedDropout(tf.keras.layers.Dropout):
+    def __init__(self, rate, **kwargs):
+        super().__init__(rate, **kwargs)
 
 
+def prepare_image(img: Image.Image) -> np.ndarray:
+    if img.mode != "RGB":
+        img = img.convert("RGB")
 
-def process_image(image_path: str):
+    img = img.resize((224, 224))
+    img_array = tf.keras.utils.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    return preprocess_input(img_array)
 
-    model = tf.keras.models.load_model(
-        settings.emotional_model_path,
-        compile=False, 
-        custom_objects={'DepthwiseConv2D': custom_depthwise_conv2d}
-    )
+
+def dog_process_image(image_path: str):
+    model_path = Path("models/dog_model.h5")
+
+    if not model_path.exists():
+        raise FileNotFoundError(f"Modelo não encontrado em: {model_path}")
+
+    custom_objects = {
+        "DepthwiseConv2D": custom_depthwise_conv2d,
+        "FixedDropout": FixedDropout,
+    }
+
+    try:
+        model = load_model(model_path, compile=False, custom_objects=custom_objects)
+    except Exception as e:
+        logging.error(f"Erro ao carregar o modelo: {e}")
+        raise RuntimeError(f"Erro ao carregar o modelo: {e}")
 
     img_array = prepare_image(image_path)
-    
-    predictions = model.predict(img_array)
 
+    predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
 
-    print(f"Probabilidades para as classes: {predictions}")
-
-    class_names = ['Angry', 'Sad', 'happy'] 
+    class_names = ["angry", "happy", "relaxed", "sad"]
     predicted_class = class_names[predicted_class_index]
-    
-    return {
-        "result": predicted_class
-    }
+
+    return {"result": predicted_class}
