@@ -1,11 +1,19 @@
-from pathlib import Path
+import base64
 import logging
-from PIL import Image
 import numpy as np
 import tensorflow as tf
+
+from PIL import Image
+from io import BytesIO
+from pathlib import Path
+
+from transformers import pipeline
+
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet import preprocess_input
 
+# Carregar a pipeline de classificação de imagem
+pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
 # Configuração do logger
 logging.basicConfig(level=logging.INFO)
 
@@ -30,6 +38,8 @@ def prepare_image(img: Image.Image) -> np.ndarray:
     return preprocess_input(img_array)
 
 
+# https://www.kaggle.com/code/sarthakkapaliya/dogemotionrecognition/notebook
+# Accuracy: 0.7833
 def dog_process_image(image_path: str):
     model_path = Path("models/dog_model.h5")
 
@@ -52,7 +62,28 @@ def dog_process_image(image_path: str):
     predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
 
-    class_names = ["angry", "happy", "relaxed", "sad"]
+    class_names = ["Angry", "Happy", "Relaxed", "Sad"]
     predicted_class = class_names[predicted_class_index]
 
-    return {"result": predicted_class}
+    return {"result": predicted_class, "status": "200"}
+
+
+# https://huggingface.co/semihdervis/cat-emotion-classifier
+# Accuracy: 0.6353
+def cat_process_image(image_pil: str):
+    pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
+
+    img_byte_array = BytesIO()
+    image_pil.save(img_byte_array, format="PNG")
+    img_base64 = base64.b64encode(img_byte_array.getvalue()).decode("utf-8")
+
+    results = pipe(img_base64)
+
+    max_score = 0
+    for result in results:
+        print(f"Classe: {result['label']}, Confiança: {result['score']:.4f}")
+        if result["score"] > max_score:
+            max_score = result["score"]
+            predicted_class = result["label"]
+
+    return {"result": predicted_class, "status": "200"}
