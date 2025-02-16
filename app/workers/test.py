@@ -34,4 +34,4 @@ for request in image_requests:
         QueueUrl=queue_url,
         MessageBody=json.dumps(request)
     )
-    print(f"Mensagem enviada: {request} | MessageId: {response['MessageId']}")
+    print(f"Message sended: {request} | MessageId: {response['MessageId']}")

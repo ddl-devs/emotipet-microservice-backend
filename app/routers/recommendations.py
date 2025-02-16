@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.services.gemini import generate_response
+from services.gemini import generate_response
 
 router = APIRouter()
 

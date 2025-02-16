@@ -63,7 +63,7 @@ def dog_process_image(image_path: str):
         img_array = prepare_image(image_path)
     except Exception as e:
         logging.error(f"Erro ao preparar a imagem: {e}")
-        return {"result": "Erro ao preparar a imagem", "status": "500"}
+        raise RuntimeError(f"Erro ao preparar a imagem: {e}")
 
     predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
