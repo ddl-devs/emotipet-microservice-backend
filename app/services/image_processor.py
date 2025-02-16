@@ -12,9 +12,9 @@ from transformers import pipeline
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet import preprocess_input
 
-# Carregar a pipeline de classificação de imagem
+# Load Pipeline of image classification
 pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
-# Configuração do logger
+# Logger configuration
 logging.basicConfig(level=logging.INFO)
 
 
@@ -54,10 +54,16 @@ def dog_process_image(image_path: str):
     try:
         model = load_model(model_path, compile=False, custom_objects=custom_objects)
     except Exception as e:
-        logging.error(f"Erro ao carregar o modelo: {e}")
+        error_message = f"Erro ao carregar o modelo: {e}"
+        logging.error(error_message)
         raise RuntimeError(f"Erro ao carregar o modelo: {e}")
+        
 
-    img_array = prepare_image(image_path)
+    try:
+        img_array = prepare_image(image_path)
+    except Exception as e:
+        logging.error(f"Erro ao preparar a imagem: {e}")
+        return {"result": "Erro ao preparar a imagem", "status": "500"}
 
     predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
