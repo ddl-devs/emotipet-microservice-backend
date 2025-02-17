@@ -40,7 +40,7 @@ def prepare_image(img: Image.Image) -> np.ndarray:
 
 # https://www.kaggle.com/code/sarthakkapaliya/dogemotionrecognition/notebook
 # Accuracy: 0.7833
-def dog_process_image(image_path: str):
+async def dog_process_image(image_path: str):
     model_path = Path("models/dog_model.h5")
 
     if not model_path.exists():
@@ -76,7 +76,7 @@ def dog_process_image(image_path: str):
 
 # https://huggingface.co/semihdervis/cat-emotion-classifier
 # Accuracy: 0.6353
-def cat_process_image(image_pil: str):
+async def cat_process_image(image_pil: str):
     pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
 
     img_byte_array = BytesIO()

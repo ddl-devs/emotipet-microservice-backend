@@ -91,8 +91,7 @@ async def poll_queue():
                         ReceiptHandle=message["ReceiptHandle"],
                     )
                     logging.info("✅ Message processed and removed from queue")
-            else:
-                logging.info("🔊 No messages in the queue")
+
         except Exception as e:
             logging.error(f"🚫 Error processing messages: {e}")
         

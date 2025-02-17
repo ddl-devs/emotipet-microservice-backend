@@ -20,11 +20,11 @@ image_requests = [
         "analysis_type": "DOG-EMOTIONAL",
         "pet_id": 1
     },
-    {
-        "image_url": "https://delavanlakesvetcom/wp-content/uploads/sites/195/2022/03/smiling-cat-for-web.jpg",
-        "analysis_type": "CAT-EMOTIONAL",
-        "pet_id": 1
-    },
+    # {
+    #     "image_url": "https://delavanlakesvet.com/wp-content/uploads/sites/195/2022/03/smiling-cat-for-web.jpg",
+    #     "analysis_type": "CAT-EMOTIONAL",
+    #     "pet_id": 1
+    # },
 ]
 
 # Simulates main backend sending messages

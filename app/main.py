@@ -11,6 +11,11 @@ async def lifespan(app: FastAPI):
     yield
     task.cancel()
 
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(router)
