@@ -96,7 +96,7 @@ async def cat_process_image(image_pil: str):
 
 # https://huggingface.co/wesleyacheng/dog-breeds-multiclass-image-classification-with-vit
 # Accuracy: 0.84
-def dog_breed_process_image(image_pil: str):
+async def dog_breed_process_image(image_pil: str):
     pipe = pipeline(
         "image-classification",
         model="wesleyacheng/dog-breeds-multiclass-image-classification-with-vit",
@@ -115,7 +115,7 @@ def dog_breed_process_image(image_pil: str):
 
 # https://huggingface.co/dima806/67_cat_breeds_image_detection
 # Accuracy: 0.7698
-def cat_breed_process_image(image_pil: str):
+async def cat_breed_process_image(image_pil: str):
     pipe = pipeline(
         "image-classification", model="dima806/67_cat_breeds_image_detection"
     )

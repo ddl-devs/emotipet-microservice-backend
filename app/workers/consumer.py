@@ -3,7 +3,12 @@ import os
 import asyncio
 import json
 from dotenv import load_dotenv
-from services.image_processor import dog_process_image, cat_process_image
+from services.image_processor import (
+    dog_breed_process_image,
+    cat_breed_process_image,
+    dog_process_image,
+    cat_process_image,
+)
 import requests
 from PIL import Image
 from io import BytesIO
@@ -55,10 +60,19 @@ async def process_message(message):
     temp_image_path, result = await fetch_image_from_url(image_url)
 
     if result:
-        if analysis_type == "DOG-EMOTIONAL":
-            result = await dog_process_image(temp_image_path)
-        elif analysis_type == "CAT-EMOTIONAL":
-            result = await cat_process_image(temp_image_path)
+        analysis_functions = {
+            "DOG-EMOTIONAL": dog_process_image,
+            "CAT-EMOTIONAL": cat_process_image,
+            "DOG-BREED": dog_breed_process_image,
+            "CAT-BREED": cat_breed_process_image,
+        }
+
+        process_function = analysis_functions.get(analysis_type)
+
+        if process_function:
+            result = await process_function(temp_image_path)
+        else:
+            result = {"result": "Invalid analysis type", "status": "400"}
 
         logging.info(f"📥 Image received for analysis: {image_url} | Type: {analysis_type}")
 
