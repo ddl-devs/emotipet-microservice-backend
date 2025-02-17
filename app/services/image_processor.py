@@ -81,7 +81,43 @@ def cat_process_image(image_pil: str):
 
     max_score = 0
     for result in results:
-        print(f"Classe: {result['label']}, Confiança: {result['score']:.4f}")
+        if result["score"] > max_score:
+            max_score = result["score"]
+            predicted_class = result["label"]
+
+    return {"result": predicted_class, "status": "200"}
+
+
+# https://huggingface.co/wesleyacheng/dog-breeds-multiclass-image-classification-with-vit
+# Accuracy: 0.84
+def dog_breed_process_image(image_pil: str):
+    pipe = pipeline(
+        "image-classification",
+        model="wesleyacheng/dog-breeds-multiclass-image-classification-with-vit",
+    )
+
+    results = pipe(image_pil)
+
+    max_score = 0
+    for result in results:
+        if result["score"] > max_score:
+            max_score = result["score"]
+            predicted_class = result["label"]
+
+    return {"result": predicted_class, "status": "200"}
+
+
+# https://huggingface.co/dima806/67_cat_breeds_image_detection
+# Accuracy: 0.7698
+def cat_breed_process_image(image_pil: str):
+    pipe = pipeline(
+        "image-classification", model="dima806/67_cat_breeds_image_detection"
+    )
+
+    results = pipe(image_pil)
+
+    max_score = 0
+    for result in results:
         if result["score"] > max_score:
             max_score = result["score"]
             predicted_class = result["label"]
