@@ -2,22 +2,25 @@ import boto3
 import os
 import asyncio
 import json
+import logging
 from dotenv import load_dotenv
+from io import BytesIO
+from PIL import Image
+import requests
 from services.image_processor import (
     dog_breed_process_image,
     cat_breed_process_image,
     dog_process_image,
     cat_process_image,
 )
-import requests
-from PIL import Image
-from io import BytesIO
-import logging
 
-logging.basicConfig(level=logging.INFO)
+# Load environment variables
 load_dotenv()
 
-# Create client consumer
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Initialize SQS client
 sqs = boto3.client(
     "sqs",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
@@ -25,68 +28,73 @@ sqs = boto3.client(
     region_name=os.getenv("AWS_REGION"),
 )
 
-# Create a FIFO SQS queue
-response = sqs.create_queue(
-    QueueName="pets-fifo.fifo",
-    Attributes={
-        "DelaySeconds": "0",
-        "MessageRetentionPeriod": "86400",
-        "FifoQueue": "true",
-        "ContentBasedDeduplication": "true",
-    },
-)
+# Function to create SQS queues
+def create_queue(queue_name):
+    return sqs.create_queue(
+        QueueName=queue_name,
+        Attributes={
+            "DelaySeconds": "0",
+            "MessageRetentionPeriod": "86400",
+            "FifoQueue": "true",
+            "ContentBasedDeduplication": "true",
+        },
+    )["QueueUrl"]
 
-queue_url = response["QueueUrl"]
+# Initialize queue URLs
+queue_url = create_queue("pets-analysis-fifo.fifo")
+response_queue_url = create_queue("pets-responses-fifo.fifo")
 
+# Mapping of analysis types to processing functions
+ANALYSIS_FUNCTIONS = {
+    "DOG_EMOTIONAL": dog_process_image,
+    "CAT_EMOTIONAL": cat_process_image,
+    "DOG_BREED": dog_breed_process_image,
+    "CAT_BREED": cat_breed_process_image,
+}
 
 async def fetch_image_from_url(url: str):
-    """Fetch an image from a URL asynchronously"""
+    """Fetch image from a URL and return a PIL Image object."""
     try:
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(None, requests.get, url)
+        response = requests.get(url)
         response.raise_for_status()
-        return Image.open(BytesIO(response.content)), True
-    except Exception as e:
-        return f"Error fetching image: {url} | {e}", False
+        return Image.open(BytesIO(response.content))
+    except requests.RequestException as e:
+        logging.error(f"🚫 Error fetching image: {url} | {e}")
+        return None
 
+async def send_response(analysis_id, result, status):
+    """Send a response message to the SQS response queue."""
+    sqs.send_message(
+        QueueUrl=response_queue_url,
+        MessageGroupId="pets",
+        MessageBody=json.dumps({
+            "analysisId": analysis_id,
+            "result": result,
+            "status": status,
+        }),
+    )
 
 async def process_message(message):
-    """Process received message"""
+    """Process an incoming SQS message."""
     body = json.loads(message["Body"])
-    image_url = body.get("image_url")
-    analysis_type = body.get("analysis_type")
-    pet_id = body.get("pet_id")
-
-    temp_image_path, result = await fetch_image_from_url(image_url)
-
-    if result:
-        analysis_functions = {
-            "DOG-EMOTIONAL": dog_process_image,
-            "CAT-EMOTIONAL": cat_process_image,
-            "DOG-BREED": dog_breed_process_image,
-            "CAT-BREED": cat_breed_process_image,
-        }
-
-        process_function = analysis_functions.get(analysis_type)
-
-        if process_function:
-            result = await process_function(temp_image_path)
-        else:
-            result = {"result": "Invalid analysis type", "status": "400"}
-
-        logging.info(f"📥 Image received for analysis: {image_url} | Type: {analysis_type}")
-
-        if result["status"] == "200":
-            logging.info(f"✅ Analysis successful: ID:{pet_id}  Result:{result['result']}")
-        else:
-            logging.error(f"🚫 {result['result']}")
-
-    else:
-        logging.error(f"🚫 {temp_image_path}")
-
+    image_url, analysis_type, analysis_id = body.get("imageUrl"), body.get("analysisType"), body.get("analysisId")
+    logging.info(f"📥 Processing image: {image_url} | Type: {analysis_type}")
+    
+    image = await fetch_image_from_url(image_url)
+    if not image:
+        return await send_response(analysis_id, "Failed to fetch image", "500")
+    
+    process_function = ANALYSIS_FUNCTIONS.get(analysis_type)
+    if not process_function:
+        return await send_response(analysis_id, "Invalid analysis type", "400")
+    
+    result = await process_function(image)
+    status = "200" if result.get("status") == "200" else "500"
+    await send_response(analysis_id, result.get("result", "Unknown error"), status)
+    logging.info(f"✅ Analysis complete: ID:{analysis_id} | Result:{result.get('result')}")
 
 async def poll_queue():
-    """Listen and process messages from SQS asynchronously"""
+    """Continuously poll the SQS queue for new messages."""
     logging.info("🔊 Listening for messages...")
     while True:
         try:
@@ -94,17 +102,13 @@ async def poll_queue():
                 QueueUrl=queue_url,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=10,
-            )
-            if "Messages" in messages:
-                for message in messages["Messages"]:
-                    logging.info("🔊 Message received")
-                    await process_message(message)
-
-                    sqs.delete_message(
-                        QueueUrl=queue_url,
-                        ReceiptHandle=message["ReceiptHandle"],
-                    )
-                    logging.info("✅ Message processed and removed from queue")
+            ).get("Messages", [])
+            
+            for message in messages:
+                logging.info("🔊 Message received")
+                await process_message(message)
+                sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=message["ReceiptHandle"])
+                logging.info("✅ Message processed and removed from queue")
 
         except Exception as e:
             logging.error(f"🚫 Error processing messages: {e}")
