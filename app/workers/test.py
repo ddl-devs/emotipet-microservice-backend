@@ -3,7 +3,7 @@ import os
 import json
 
 
-queue_url = "https://sqs.us-east-2.amazonaws.com/209479262001/pets-fifo.fifo"
+queue_url = "https://sqs.us-east-2.amazonaws.com/209479262001/pets-analysis-fifo.fifo"
 
 # Create client consumer
 sqs = boto3.client(
@@ -25,20 +25,20 @@ image_requests = [
     #     "analysis_type": "CAT-EMOTIONAL",
     #     "pet_id": 1
     # },
+    # {
+    #     "image_url": "https://assets.elanco.com/8e0bf1c2-1ae4-001f-9257-f2be3c683fb1/fca42f04-2474-4302-a238-990c8aebfe8c/Siamese_cat_1110x740.jpg?w=3840&q=75&auto=format",
+    #     "analysis_type": "CAT-BREED",
+    #     "pet_id": 1
+    # },
+    # {
+    #     "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Jewelkatz_Romeo_Of_Stalker-Bars.jpg",
+    #     "analysis_type": "CAT-BREED",
+    #     "pet_id": 1
+    # },
     {
-        "image_url": "https://assets.elanco.com/8e0bf1c2-1ae4-001f-9257-f2be3c683fb1/fca42f04-2474-4302-a238-990c8aebfe8c/Siamese_cat_1110x740.jpg?w=3840&q=75&auto=format",
-        "analysis_type": "CAT-BREED",
-        "pet_id": 1
-    },
-    {
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Jewelkatz_Romeo_Of_Stalker-Bars.jpg",
-        "analysis_type": "CAT-BREED",
-        "pet_id": 1
-    },
-    {
-        "image_url": "https://animalcarecentersmyrna.com/wp-content/uploads/2021/08/Untitled-design-2021-08-19T162152.857.png",
-        "analysis_type": "DOG-BREED",
-        "pet_id": 1
+        "imageUrl": "https://animalcarecentersmyrna.com/wp-content/uploads/2021/08/Untitled-design-2021-08-19T162152.857.png",
+        "analysisType": "DOG-BREED",
+        "analysisId": 1
     },
 ]
 

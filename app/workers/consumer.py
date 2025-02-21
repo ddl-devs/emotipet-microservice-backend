@@ -62,7 +62,7 @@ async def fetch_image_from_url(url: str):
         logging.error(f"🚫 Error fetching image: {url} | {e}")
         return None
 
-async def send_response(analysis_id, result, status):
+async def send_response(analysis_id, result, status, type=None, accuracy=None):
     """Send a response message to the SQS response queue."""
     sqs.send_message(
         QueueUrl=response_queue_url,
@@ -71,6 +71,8 @@ async def send_response(analysis_id, result, status):
             "analysisId": analysis_id,
             "result": result,
             "status": status,
+            "analysisType": type,
+            "accuracy": accuracy,
         }),
     )
 
@@ -90,7 +92,7 @@ async def process_message(message):
     
     result = await process_function(image)
     status = "200" if result.get("status") == "200" else "500"
-    await send_response(analysis_id, result.get("result", "Unknown error"), status)
+    await send_response(analysis_id, result.get("result", "Unknown error"), status, analysis_type, result.get("score"))
     logging.info(f"✅ Analysis complete: ID:{analysis_id} | Result:{result.get('result')}")
 
 async def poll_queue():

@@ -71,7 +71,7 @@ async def dog_process_image(image_path: str):
     class_names = ["Angry", "Happy", "Relaxed", "Sad"]
     predicted_class = class_names[predicted_class_index]
 
-    return {"result": predicted_class, "status": "200"}
+    return {"result": predicted_class, "status": "200", "score": np.max(predictions)}
 
 
 # https://huggingface.co/semihdervis/cat-emotion-classifier
@@ -91,7 +91,11 @@ async def cat_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
 
 
 # https://huggingface.co/wesleyacheng/dog-breeds-multiclass-image-classification-with-vit
@@ -110,7 +114,11 @@ async def dog_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
 
 
 # https://huggingface.co/dima806/67_cat_breeds_image_detection
@@ -128,4 +136,8 @@ async def cat_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
