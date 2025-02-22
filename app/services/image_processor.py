@@ -123,8 +123,6 @@ async def dog_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    predicted_class = translate_text(predicted_class)
-
     return {
         "result": predicted_class, 
         "status": "200",
@@ -146,8 +144,6 @@ async def cat_breed_process_image(image_pil: str):
         if result["score"] > max_score:
             max_score = result["score"]
             predicted_class = result["label"]
-
-    predicted_class = translate_text(predicted_class)
 
     return {
         "result": predicted_class, 
