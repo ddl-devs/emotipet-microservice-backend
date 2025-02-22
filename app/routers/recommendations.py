@@ -1,18 +1,23 @@
 from fastapi import APIRouter, Query
 from services.gemini import generate_response
+from pydantic import BaseModel
+from typing import List
+from routers.models import (
+    IMC,
+    CommonRequest,
+    WithEmotion,
+)
 
 router = APIRouter()
 
 
 @router.post("/recommendations/imc")
 async def get_imcc_recommendations(
-    weight: float = Query(..., description="Weight of the dog in kg"),
-    breed: str = Query(..., description="Breed of the dog"),
-    height: float = Query(..., description="Height of the dog in cm"),
+    imc: IMC
 ):
     prompt = (
-        f"Calcule o IMCC (Índice de Massa Corporal Canino) para um cachorro da raça {breed}"
-        f" com peso de {weight} kg e altura de {height} cm. Retorne apenas o valor do IMCC e sua classificação.\n\n"
+        f"Calcule o IMCC (Índice de Massa Corporal Canino) para um cachorro da raça {imc.breed}"
+        f" com peso de {imc.weight} kg e altura de {imc.height} cm. Retorne apenas o valor do IMCC e sua classificação.\n\n"
         "A fórmula para o cálculo é:\n"
         "IMCC = peso / (altura × altura)\n\n"
         "Classificação:\n"
@@ -29,17 +34,28 @@ async def get_imcc_recommendations(
 
 @router.post("/recommendations/activities")
 async def get_activities_recommendations(
-    weight: float = Query(..., description="Weight of the dog in kg"),
-    breed: str = Query(..., description="Breed of the dog"),
-    age: int = Query(..., description="Age of the dog in years"),
+    with_emotion: WithEmotion
 ):
     prompt = (
-        f"Recomende atividades físicas para um cachorro da raça {breed} com {weight} kg e {age} anos de idade. "
+        f"Recomende atividades físicas para um cachorro da raça {with_emotion.breed} com {with_emotion.weight} kg e {with_emotion.age} anos de idade. "
         "As atividades devem ser adequadas para o porte e a faixa etária do cachorro, "
         "considerando o seu nível de energia e condição física.\n\n"
         "Considerações: cachorros mais velhos podem precisar de atividades mais leves, "
         "enquanto cachorros jovens podem se beneficiar de atividades mais intensas."
     )
+
+    if with_emotion.emotions:
+                prompt += "Além disso, considere as análises emocionais recentes do cachorro para contextualizar a recomendação de atividades.\n"
+                prompt += "Cada análise tem um nível de precisão, indicando a confiabilidade do dado:\n"
+
+                for emotion in with_emotion.emotions:
+                    prompt += (
+                        f"- Em {emotion.date}, o pet foi classificado como {emotion.emotion} "
+                        f"com uma precisão de {emotion.accuracy:.2f}.\n"
+                    )
+
+                prompt += "\nUse essas informações para fornecer uma análise mais completa, levando em conta a confiabilidade dos dados emocionais."
+
 
     response = generate_response(prompt)
 
@@ -48,16 +64,26 @@ async def get_activities_recommendations(
 
 @router.post("/recommendations/health")
 async def get_health_wealness_recommendations(
-    weight: float = Query(..., description="Weight of the dog in kg"),
-    breed: str = Query(..., description="Breed of the dog"),
-    age: int = Query(..., description="Age of the dog in years"),
+    with_emotion: WithEmotion
 ):
     prompt = (
-        f"Recomende cuidados de saúde e bem-estar para um cachorro da raça {breed} com {age} anos e {weight} kg. "
+        f"Recomende cuidados de saúde e bem-estar para um cachorro da raça {with_emotion.breed} com {with_emotion.age} anos e {with_emotion.weight} kg. "
         "As recomendações devem levar em consideração a raça e o peso do cachorro, "
         "incluindo cuidados preventivos, alimentação e quaisquer condições específicas da raça.\n\n"
         "Por exemplo, algumas raças podem ter propensão a problemas articulares ou cardíacos."
     )
+
+    if with_emotion.emotions:
+                prompt += "Além disso, considere as análises emocionais recentes do cachorro para contextualizar as recomendações de cuidados.\n"
+                prompt += "Cada análise tem um nível de precisão, indicando a confiabilidade do dado:\n"
+
+                for emotion in with_emotion.emotions:
+                    prompt += (
+                        f"- Em {emotion.date}, o pet foi classificado como {emotion.emotion} "
+                        f"com uma precisão de {emotion.accuracy:.2f}.\n"
+                    )
+
+                prompt += "\nUse essas informações para fornecer uma análise mais completa, levando em conta a confiabilidade dos dados emocionais."
 
     response = generate_response(prompt)
 
@@ -66,16 +92,26 @@ async def get_health_wealness_recommendations(
 
 @router.post("/recommendations/training")
 async def get_training_recommendations(
-    weight: float = Query(..., description="Weight of the dog in kg"),
-    breed: str = Query(..., description="Breed of the dog"),
-    age: float = Query(..., description="Age of the dog in years"),
+    with_emotion: WithEmotion
 ):
     prompt = (
-        f"Recomende dicas de treinamento e comportamento para um cachorro da raça {breed} com {age} anos e {weight} kg. "
+        f"Recomende dicas de treinamento e comportamento para um cachorro da raça {with_emotion.breed} com {with_emotion.age} anos e {with_emotion.weight} kg. "
         "As recomendações devem incluir técnicas de adestramento para corrigir comportamentos indesejados, "
         "estimulação mental e socialização.\n\n"
         "Leve em conta que raças diferentes podem ter necessidades distintas de treinamento e comportamento."
     )
+
+    if with_emotion.emotions:
+            prompt += "Além disso, considere as análises emocionais recentes do cachorro para contextualizar a avaliação de treinamento.\n"
+            prompt += "Cada análise tem um nível de precisão, indicando a confiabilidade do dado:\n"
+
+            for emotion in with_emotion.emotions:
+                prompt += (
+                    f"- Em {emotion.date}, o pet foi classificado como {emotion.emotion} "
+                    f"com uma precisão de {emotion.accuracy:.2f}.\n"
+                )
+
+            prompt += "\nUse essas informações para fornecer uma análise mais completa, levando em conta a confiabilidade dos dados emocionais."
 
     response = generate_response(prompt)
 
@@ -84,12 +120,10 @@ async def get_training_recommendations(
 
 @router.post("/recommendations/products")
 async def get_products_recommendations(
-    weight: float = Query(..., description="Weight of the dog in kg"),
-    breed: str = Query(..., description="Breed of the dog"),
-    age: float = Query(..., description="Age of the dog in years"),
+    body: CommonRequest
 ):
     prompt = (
-        f"Recomende produtos para um cachorro da raça {breed} com {age} anos e {weight} kg."
+        f"Recomende produtos para um cachorro da raça {body.breed} com {body.age} anos e {body.weight} kg."
         "Os produtos podem incluir ração, brinquedos, acessórios, camas e outros itens adequados ao porte e necessidades do cachorro.\n\n"
         "Leve em consideração a saúde e a preferência do cachorro ao sugerir os produtos."
     )
