@@ -84,14 +84,17 @@ async def process_message(message):
     
     image = await fetch_image_from_url(image_url)
     if not image:
+        logging.error(f"🚫 Failed to fetch image: {image_url}")
         return await send_response(analysis_id, "Failed to fetch image", "500")
     
     process_function = ANALYSIS_FUNCTIONS.get(analysis_type)
     if not process_function:
+        logging.error(f"🚫 Invalid analysis type: {analysis_type}")
         return await send_response(analysis_id, "Invalid analysis type", "400")
     
     result = await process_function(image)
     status = "200" if result.get("status") == "200" else "500"
+
     await send_response(analysis_id, result.get("result", "Unknown error"), status, analysis_type, result.get("score"))
     logging.info(f"✅ Analysis complete: ID:{analysis_id} | Result:{result.get('result')}")
 
