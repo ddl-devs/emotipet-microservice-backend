@@ -1,7 +1,21 @@
+from workers.consumer import poll_queue
 from fastapi import FastAPI
-from app.routers import analysis, recommendations
+from routers.recommendations import router
+from contextlib import asynccontextmanager
+import asyncio
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Runs SQS listener in the background"""
+    task = asyncio.create_task(poll_queue())  
+    yield
+    task.cancel()
 
-app.include_router(analysis.router)
-app.include_router(recommendations.router)
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(router)

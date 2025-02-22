@@ -12,9 +12,9 @@ from transformers import pipeline
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet import preprocess_input
 
-# Carregar a pipeline de classificação de imagem
+# Load Pipeline of image classification
 pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
-# Configuração do logger
+# Logger configuration
 logging.basicConfig(level=logging.INFO)
 
 
@@ -40,7 +40,7 @@ def prepare_image(img: Image.Image) -> np.ndarray:
 
 # https://www.kaggle.com/code/sarthakkapaliya/dogemotionrecognition/notebook
 # Accuracy: 0.7833
-def dog_process_image(image_path: str):
+async def dog_process_image(image_path: str):
     model_path = Path("models/dog_model.h5")
 
     if not model_path.exists():
@@ -54,10 +54,16 @@ def dog_process_image(image_path: str):
     try:
         model = load_model(model_path, compile=False, custom_objects=custom_objects)
     except Exception as e:
-        logging.error(f"Erro ao carregar o modelo: {e}")
+        error_message = f"Erro ao carregar o modelo: {e}"
+        logging.error(error_message)
         raise RuntimeError(f"Erro ao carregar o modelo: {e}")
+        
 
-    img_array = prepare_image(image_path)
+    try:
+        img_array = prepare_image(image_path)
+    except Exception as e:
+        logging.error(f"Erro ao preparar a imagem: {e}")
+        raise RuntimeError(f"Erro ao preparar a imagem: {e}")
 
     predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
@@ -65,12 +71,12 @@ def dog_process_image(image_path: str):
     class_names = ["Angry", "Happy", "Relaxed", "Sad"]
     predicted_class = class_names[predicted_class_index]
 
-    return {"result": predicted_class, "status": "200"}
+    return {"result": predicted_class, "status": "200", "score": np.max(predictions)}
 
 
 # https://huggingface.co/semihdervis/cat-emotion-classifier
 # Accuracy: 0.6353
-def cat_process_image(image_pil: str):
+async def cat_process_image(image_pil: str):
     pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
 
     img_byte_array = BytesIO()
@@ -85,12 +91,16 @@ def cat_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
 
 
 # https://huggingface.co/wesleyacheng/dog-breeds-multiclass-image-classification-with-vit
 # Accuracy: 0.84
-def dog_breed_process_image(image_pil: str):
+async def dog_breed_process_image(image_pil: str):
     pipe = pipeline(
         "image-classification",
         model="wesleyacheng/dog-breeds-multiclass-image-classification-with-vit",
@@ -104,12 +114,16 @@ def dog_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
 
 
 # https://huggingface.co/dima806/67_cat_breeds_image_detection
 # Accuracy: 0.7698
-def cat_breed_process_image(image_pil: str):
+async def cat_breed_process_image(image_pil: str):
     pipe = pipeline(
         "image-classification", model="dima806/67_cat_breeds_image_detection"
     )
@@ -122,4 +136,8 @@ def cat_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
-    return {"result": predicted_class, "status": "200"}
+    return {
+        "result": predicted_class, 
+        "status": "200",
+        'score': max_score
+    }
