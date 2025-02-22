@@ -11,12 +11,17 @@ from transformers import pipeline
 
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet import preprocess_input
+from googletrans import Translator
 
 # Load Pipeline of image classification
 pipe = pipeline("image-classification", model="semihdervis/cat-emotion-classifier")
 # Logger configuration
 logging.basicConfig(level=logging.INFO)
 
+def translate_text(text):
+    translator = Translator()
+    result = translator.translate(text, src='en', dest='pt')
+    return result.text
 
 def custom_depthwise_conv2d(*args, **kwargs):
     kwargs.pop("groups", None)
@@ -71,6 +76,8 @@ async def dog_process_image(image_path: str):
     class_names = ["Angry", "Happy", "Relaxed", "Sad"]
     predicted_class = class_names[predicted_class_index]
 
+    predicted_class = translate_text(predicted_class)
+
     return {"result": predicted_class, "status": "200", "score": np.max(predictions)}
 
 
@@ -90,6 +97,8 @@ async def cat_process_image(image_pil: str):
         if result["score"] > max_score:
             max_score = result["score"]
             predicted_class = result["label"]
+
+    predicted_class = translate_text(predicted_class)
 
     return {
         "result": predicted_class, 
@@ -114,6 +123,8 @@ async def dog_breed_process_image(image_pil: str):
             max_score = result["score"]
             predicted_class = result["label"]
 
+    predicted_class = translate_text(predicted_class)
+
     return {
         "result": predicted_class, 
         "status": "200",
@@ -135,6 +146,8 @@ async def cat_breed_process_image(image_pil: str):
         if result["score"] > max_score:
             max_score = result["score"]
             predicted_class = result["label"]
+
+    predicted_class = translate_text(predicted_class)
 
     return {
         "result": predicted_class, 
