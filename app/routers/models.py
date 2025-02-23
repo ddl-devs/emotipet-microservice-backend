@@ -2,9 +2,10 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class CommonRequest(BaseModel):
-    breed: str
-    weight: float
-    age: int
+    species: str|None
+    breed: str|None
+    weight: float|None
+    age: int|None
 
 class EmotionAnalysis(BaseModel):
     date: datetime  
@@ -15,6 +16,7 @@ class WithEmotion(CommonRequest):
     emotions: list[EmotionAnalysis]  
 
 class IMC(BaseModel):
+    species: str|None
     weight: float
     height: float
-    breed: str
+    breed: str|None
