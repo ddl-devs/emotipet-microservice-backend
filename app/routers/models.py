@@ -6,6 +6,7 @@ class CommonRequest(BaseModel):
     breed: str|None
     weight: float|None
     age: int|None
+    gender: str|None
 
 class EmotionAnalysis(BaseModel):
     date: datetime  
