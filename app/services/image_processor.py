@@ -63,7 +63,6 @@ async def dog_process_image(image_path: str):
         logging.error(error_message)
         raise RuntimeError(f"Erro ao carregar o modelo: {e}")
         
-
     try:
         img_array = prepare_image(image_path)
     except Exception as e:
@@ -78,7 +77,7 @@ async def dog_process_image(image_path: str):
 
     predicted_class = translate_text(predicted_class)
 
-    return {"result": predicted_class, "status": "200", "score": np.max(predictions)}
+    return {"result": predicted_class, "status": "200", "score": float(np.max(predictions))}
 
 
 # https://huggingface.co/semihdervis/cat-emotion-classifier
