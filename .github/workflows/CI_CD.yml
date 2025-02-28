@@ -1,0 +1,50 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Access EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy on EC2
+        run: |
+          ssh ubuntu@$EC2_HOST << 'EOF'
+            set -e  # Para o script se houver erro
+
+            APP_DIR="/home/ubuntu/emotipet-microservice-backend"
+
+            if [ -d "$APP_DIR" ]; then
+              cd $APP_DIR
+              git pull origin main
+            else
+              git clone https://github.com/ddl-devs/emotipet-microservice-backend.git $APP_DIR
+              cd $APP_DIR
+            fi
+
+            cp /home/ubuntu/.env $APP_DIR/.env
+
+            docker build -t fastapi-app:latest .
+
+            docker stop fastapi-container || true
+            docker rm fastapi-container || true
+
+            docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
+          EOF
