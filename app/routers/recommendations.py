@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Query
-from services.gemini import generate_response
+from app.services.gemini import generate_response
 from pydantic import BaseModel
 from typing import List
-from routers.models import (
+from app.routers.models import (
     IMC,
     CommonRequest,
     WithEmotion,
