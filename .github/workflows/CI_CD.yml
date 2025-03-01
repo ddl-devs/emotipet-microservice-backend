@@ -19,13 +19,13 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          echo ${{ secrets.EC2_SSH_KEY }} > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy on EC2
         run: |
-          ssh -v ubuntu@$EC2_HOST << 'EOF'
+          ssh -v ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
             echo "APP_DIR: $APP_DIR"
