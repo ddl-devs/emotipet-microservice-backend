@@ -36,10 +36,10 @@ jobs:
 
             cp /home/ubuntu/.env $APP_DIR/.env
 
-            docker build -t fastapi-app:latest .
+            sudo docker build -t fastapi-app:latest .
 
-            docker stop fastapi-container || true
-            docker rm fastapi-container || true
+            sudo docker stop fastapi-container || true
+            sudo docker rm fastapi-container || true
 
-            docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
+            sudo docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
           EOF
