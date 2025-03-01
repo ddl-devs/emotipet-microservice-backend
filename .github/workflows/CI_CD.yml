@@ -13,21 +13,23 @@ jobs:
       - name: Code Checkout
         uses: actions/checkout@v3
 
-      - name: Deploy on EC2
+      - name: Access EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.USER }}
+          
         run: |
-          echo "$SSH_PRIVATE_KEY" > emotipet-backend.pem && chmod 600 emotipet-backend.pem
-          echo "Private key content:"
-          cat emotipet-backend.pem
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
-          ssh -v -o StrictHostKeyChecking=no -i emotipet-backend.pem ${USER}@${EC2_HOST} << 'EOF'
-            set -e
+      - name: Deploy on EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@$EC2_HOST << 'EOF'
+            set -e  # Exit on error
 
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
-            echo "APP_DIR: $APP_DIR"
 
             if [ -d "$APP_DIR" ]; then
               cd $APP_DIR
