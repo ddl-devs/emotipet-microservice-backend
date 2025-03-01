@@ -13,21 +13,16 @@ jobs:
       - name: Code Checkout
         uses: actions/checkout@v3
 
-      - name: Access EC2
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-
       - name: Deploy on EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.USER }}
         run: |
-          ssh ubuntu@$EC2_HOST << 'EOF'
-            set -e  # Para o script se houver erro
+          echo "$PRIVATE_KEY" > emotipet.pem && chmod 600 emotipet.pem
+
+          ssh -o StrictHostKeyChecking=no -i emotipet.pem ${USER}@${HOST} << 'EOF'
+            set -e  # Exit on error
 
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
 
@@ -41,10 +36,10 @@ jobs:
 
             cp /home/ubuntu/.env $APP_DIR/.env
 
-            docker build -t fastapi-app:latest .
+            sudo docker build -t fastapi-app:latest .
 
-            docker stop fastapi-container || true
-            docker rm fastapi-container || true
+            sudo docker stop fastapi-container || true
+            sudo docker rm fastapi-container || true
 
-            docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
+            sudo docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
           EOF
