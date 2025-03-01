@@ -13,22 +13,20 @@ jobs:
       - name: Code Checkout
         uses: actions/checkout@v3
 
-      - name: Access EC2
+      - name: Deploy on EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.USER }}
         run: |
-          mkdir -p ~/.ssh
-          echo ${{ secrets.EC2_SSH_KEY }} > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "$SSH_PRIVATE_KEY" > emotipet-backend.pem && chmod 600 emotipet-backend.pem
 
-      - name: Deploy on EC2
-        run: |
-          ssh -v ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i emotipet-backend.pem ${USER}@${EC2_HOST} << 'EOF'
             set -e
+
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
             echo "APP_DIR: $APP_DIR"
+
             if [ -d "$APP_DIR" ]; then
               cd $APP_DIR
               git pull origin main
@@ -36,9 +34,13 @@ jobs:
               git clone https://github.com/ddl-devs/emotipet-microservice-backend.git $APP_DIR
               cd $APP_DIR
             fi
+
             cp /home/ubuntu/.env $APP_DIR/.env
+
             docker build -t fastapi-app:latest .
+
             docker stop fastapi-container || true
             docker rm fastapi-container || true
+
             docker run -d --name fastapi-container -p 8000:8000 --env-file $APP_DIR/.env fastapi-app:latest
           EOF
