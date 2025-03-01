@@ -13,19 +13,15 @@ jobs:
       - name: Code Checkout
         uses: actions/checkout@v3
 
-      - name: Access EC2
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-
       - name: Deploy on EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.USER }}
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          echo "$PRIVATE_KEY" > emotipet.pem && chmod 600 emotipet.pem
+
+          ssh -o StrictHostKeyChecking=no -i emotipet.pem ${USER}@${HOST} << 'EOF'
             set -e  # Exit on error
 
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
