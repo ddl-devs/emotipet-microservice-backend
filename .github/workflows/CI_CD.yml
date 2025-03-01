@@ -20,8 +20,10 @@ jobs:
           USER: ${{ secrets.USER }}
         run: |
           echo "$SSH_PRIVATE_KEY" > emotipet-backend.pem && chmod 600 emotipet-backend.pem
+          echo "Private key content:"
+          cat emotipet-backend.pem
 
-          ssh -o StrictHostKeyChecking=no -i emotipet-backend.pem ${USER}@${EC2_HOST} << 'EOF'
+          ssh -v -o StrictHostKeyChecking=no -i emotipet-backend.pem ${USER}@${EC2_HOST} << 'EOF'
             set -e
 
             APP_DIR="/home/ubuntu/emotipet-microservice-backend"
