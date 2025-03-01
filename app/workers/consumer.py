@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 from PIL import Image
 import requests
-from services.image_processor import (
+from app.services.image_processor import (
     dog_breed_process_image,
     cat_breed_process_image,
     dog_process_image,

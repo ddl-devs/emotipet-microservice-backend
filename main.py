@@ -1,6 +1,6 @@
-from workers.consumer import poll_queue
+from app.workers.consumer import poll_queue
 from fastapi import FastAPI
-from routers.recommendations import router
+from app.routers.recommendations import router
 from contextlib import asynccontextmanager
 import asyncio
 
